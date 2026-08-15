@@ -9,13 +9,13 @@
 
 ## 下载安装（免装 Python）
 
-到 [Releases](https://github.com/gatesenman/schema-data-forge/releases) 页面下载对应平台的安装包，解压后双击即可运行：
+到 [Releases](https://github.com/gatesenman/schema-data-forge/releases) 页面下载对应平台的安装包：
 
-| 平台 | 文件 | 说明 |
+| 平台 | 安装版 | 绿色版（免安装） |
 | --- | --- | --- |
-| Windows | `SchemaDataForge-windows.zip` | 解压后双击 `SchemaDataForge.exe`（需要 WebView2 Runtime，Win10/11 一般自带） |
-| macOS | `SchemaDataForge-macos.zip` | 解压后把 `SchemaDataForge.app` 拖到应用程序；首次打开若被拦截，右键 → 打开 |
-| Linux | `SchemaDataForge-linux.zip` | 解压后运行 `./SchemaDataForge`（缺 WebKitGTK 时自动回退到默认浏览器） |
+| Windows | `SchemaDataForge-Setup.exe`：安装向导，含开始菜单/桌面快捷方式和卸载（需要 WebView2 Runtime，Win10/11 一般自带） | `SchemaDataForge-windows.zip`：解压后双击 `SchemaDataForge.exe` |
+| macOS | `SchemaDataForge.dmg`：打开后把应用拖到 Applications；首次打开若被拦截，右键 → 打开 | `SchemaDataForge-macos.zip`：解压即用 |
+| Linux | `SchemaDataForge.deb`：`sudo dpkg -i SchemaDataForge.deb` 后从应用菜单启动（缺 WebKitGTK 时自动回退到默认浏览器） | `SchemaDataForge-linux.zip`：解压后运行 `./SchemaDataForge` |
 
 ## 界面
 
