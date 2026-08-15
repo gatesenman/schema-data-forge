@@ -6,9 +6,11 @@ from schema_data_forge.models import SchemaKind
 from schema_data_forge.validation import (
     detect_schema_kind,
     format_document,
+    json_line_map,
     validate,
     validate_json,
     validate_xml,
+    xml_line_map,
     xsd_root_elements,
     xsd_target_namespace,
 )
@@ -62,6 +64,28 @@ def test_xml_keyref_violation_is_detected(ontology_xsd: str, valid_ontology_xml:
     broken = valid_ontology_xml.replace('targetObjectType="aircraft"', 'targetObjectType="crew"')
     report = validate_xml(broken, ontology_xsd)
     assert not report.is_valid
+
+
+def test_xml_issues_carry_line_numbers(ontology_xsd: str, valid_ontology_xml: str) -> None:
+    broken = valid_ontology_xml.replace('cardinality="ONE_TO_ONE"', 'cardinality="SOMETIMES"')
+    report = validate_xml(broken, ontology_xsd)
+    issue = next(issue for issue in report.issues if "SOMETIMES" in issue.message)
+    assert issue.line is not None
+    assert "SOMETIMES" in broken.splitlines()[issue.line - 1]
+
+
+def test_json_issues_carry_line_numbers(object_set_schema: str, valid_object_set: str) -> None:
+    broken = valid_object_set.replace('"classification": "SECRET"', '"classification": "COSMIC"')
+    report = validate_json(broken, object_set_schema)
+    issue = next(issue for issue in report.issues if "COSMIC" in issue.message)
+    assert issue.line is not None
+    assert "COSMIC" in broken.splitlines()[issue.line - 1]
+
+
+def test_line_maps_survive_unparsable_input() -> None:
+    assert xml_line_map("<a>") == {"/a[1]": 1}
+    assert json_line_map("{oops") == {(): 1}
+    assert json_line_map("") == {}
 
 
 def test_xml_parse_error_is_reported(ontology_xsd: str) -> None:

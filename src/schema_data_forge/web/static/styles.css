@@ -84,7 +84,7 @@ body { display: flex; flex-direction: column; }
   background: var(--bg-elevated);
 }
 
-.pane-ai { grid-row: span 2; }
+.pane-ai { grid-row: span 2; overflow-y: auto; }
 
 .pane h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
 .pane h3 { margin: 0; font-size: 12px; color: var(--text-dim); }
@@ -112,6 +112,7 @@ select { cursor: pointer; }
 select:disabled { color: #5b6272; cursor: not-allowed; }
 
 textarea { resize: vertical; }
+#instructions { min-height: 72px; }
 
 .code {
   flex: 1;
@@ -166,7 +167,7 @@ details.config > label, details.config > .row { margin-top: 8px; }
 
 .log {
   flex: 1;
-  min-height: 90px;
+  min-height: 72px;
   margin: 0;
   padding: 8px 10px;
   list-style: none;
@@ -196,6 +197,14 @@ details.config > label, details.config > .row { margin-top: 8px; }
 .issues td:nth-child(2) { font-family: var(--mono); color: var(--text-dim); }
 .issues tr.empty td { color: #5b6272; text-align: center; }
 .issues tbody tr:not(.empty):hover { background: #1c2130; cursor: pointer; }
+
+@media (max-height: 820px) {
+  .code { min-height: 80px; }
+  .log { min-height: 52px; }
+  .pane { padding: 10px; gap: 8px; }
+  .layout { gap: 8px; padding: 8px; }
+  #instructions { min-height: 52px; }
+}
 
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }

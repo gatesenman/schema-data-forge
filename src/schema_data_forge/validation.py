@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from typing import Any
+from xml.parsers import expat
 
 import jsonschema
 import xmlschema
@@ -22,6 +24,66 @@ def _json_pointer(error: jsonschema.ValidationError) -> str:
     for token in error.absolute_path:
         parts.append(f"[{token}]" if isinstance(token, int) else f".{token}")
     return "".join(parts)
+
+
+JsonPath = tuple[str | int, ...]
+
+
+def _skip_ws(text: str, i: int) -> int:
+    while i < len(text) and text[i] in " \t\r\n":
+        i += 1
+    return i
+
+
+def _skip_string(text: str, i: int) -> int:
+    i += 1
+    while text[i] != '"':
+        i += 2 if text[i] == "\\" else 1
+    return i + 1
+
+
+def _skip_scalar(text: str, i: int) -> int:
+    while i < len(text) and text[i] not in ",]} \t\r\n":
+        i += 1
+    return i
+
+
+def _scan_value(text: str, i: int, path: JsonPath, out: dict[JsonPath, int]) -> int:
+    out.setdefault(path, i)
+    char = text[i]
+    if char == "{":
+        i = _skip_ws(text, i + 1)
+        while text[i] != "}":
+            key_end = _skip_string(text, i)
+            key = str(json.loads(text[i:key_end]))
+            i = _skip_ws(text, _skip_ws(text, key_end) + 1)
+            i = _skip_ws(text, _scan_value(text, i, (*path, key), out))
+            if text[i] == ",":
+                i = _skip_ws(text, i + 1)
+        return i + 1
+    if char == "[":
+        i = _skip_ws(text, i + 1)
+        index = 0
+        while text[i] != "]":
+            i = _skip_ws(text, _scan_value(text, i, (*path, index), out))
+            index += 1
+            if text[i] == ",":
+                i = _skip_ws(text, i + 1)
+        return i + 1
+    if char == '"':
+        return _skip_string(text, i)
+    return _skip_scalar(text, i)
+
+
+def json_line_map(document: str) -> dict[JsonPath, int]:
+    """Map every JSON path in ``document`` to the 1-based line where its value starts."""
+    if not document.strip():
+        return {}
+    offsets: dict[JsonPath, int] = {}
+    # A partial map is still useful for the error panel when the document is malformed.
+    with contextlib.suppress(IndexError, ValueError, RecursionError):
+        _scan_value(document, _skip_ws(document, 0), (), offsets)
+    return {path: document.count("\n", 0, offset) + 1 for path, offset in offsets.items()}
 
 
 def validate_json(document: str, schema_text: str) -> ValidationReport:
@@ -43,8 +105,13 @@ def validate_json(document: str, schema_text: str) -> ValidationReport:
         return ValidationReport(parse_error=f"not valid JSON: {exc}")
 
     validator = validator_cls(schema)
+    lines = json_line_map(document)
     issues = [
-        ValidationIssue(message=error.message, location=_json_pointer(error))
+        ValidationIssue(
+            message=error.message,
+            location=_json_pointer(error),
+            line=lines.get(tuple(error.absolute_path)),
+        )
         for error in sorted(validator.iter_errors(instance), key=lambda e: list(e.absolute_path))
     ]
     return ValidationReport(issues=tuple(issues[:_MAX_ISSUES]))
@@ -58,10 +125,51 @@ def _xml_location(error: XMLSchemaValidationError) -> str:
     return str(getattr(elem, "tag", "")) if elem is not None else ""
 
 
-def _xml_issue(error: XMLSchemaValidationError) -> ValidationIssue:
+def _normalize_xml_path(path: str) -> str:
+    """Rewrite an XPath-like location into ``/local[n]/local[n]`` form for line lookups."""
+    segments = []
+    for raw in path.strip("/").split("/"):
+        name = raw.split(":")[-1]
+        if not name or name.startswith("@"):
+            continue
+        segments.append(name if name.endswith("]") else f"{name}[1]")
+    return "/" + "/".join(segments)
+
+
+def xml_line_map(document: str) -> dict[str, int]:
+    """Map every element path in ``document`` to the 1-based line of its start tag."""
+    lines: dict[str, int] = {}
+    stack: list[str] = []
+    counts: list[dict[str, int]] = [{}]
+    skipped = document.count("\n", 0, len(document) - len(document.lstrip()))
+    parser = expat.ParserCreate()
+
+    def start_element(name: str, attrs: dict[str, str]) -> None:
+        local = name.split(":")[-1]
+        counter = counts[-1]
+        counter[local] = counter.get(local, 0) + 1
+        stack.append(f"{local}[{counter[local]}]")
+        counts.append({})
+        lines["/" + "/".join(stack)] = parser.CurrentLineNumber + skipped
+
+    def end_element(name: str) -> None:
+        stack.pop()
+        counts.pop()
+
+    parser.StartElementHandler = start_element
+    parser.EndElementHandler = end_element
+    with contextlib.suppress(expat.ExpatError):
+        parser.Parse(document.strip(), True)
+    return lines
+
+
+def _xml_issue(error: XMLSchemaValidationError, lines: dict[str, int]) -> ValidationIssue:
     reason = error.reason or str(error)
+    location = _xml_location(error)
     line = getattr(getattr(error, "elem", None), "sourceline", None)
-    return ValidationIssue(message=str(reason).strip(), location=_xml_location(error), line=line)
+    if line is None and location:
+        line = lines.get(_normalize_xml_path(location))
+    return ValidationIssue(message=str(reason).strip(), location=location, line=line)
 
 
 def load_xml_schema(schema_text: str) -> xmlschema.XMLSchema:
@@ -76,10 +184,11 @@ def validate_xml(document: str, schema_text: str) -> ValidationReport:
     except Exception as exc:  # noqa: BLE001 - xmlschema raises a wide family of errors
         return ValidationReport(schema_error=f"XSD could not be compiled: {exc}")
 
+    lines = xml_line_map(document)
     issues: list[ValidationIssue] = []
     try:
         for error in schema.iter_errors(document.strip()):
-            issues.append(_xml_issue(error))
+            issues.append(_xml_issue(error, lines))
             if len(issues) >= _MAX_ISSUES:
                 break
     except Exception as exc:  # noqa: BLE001 - malformed XML surfaces as a parse error

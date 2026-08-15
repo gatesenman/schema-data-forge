@@ -92,8 +92,9 @@ def test_validate_xml_invalid_reports_location(
         json={"document": broken, "schemaText": ontology_xsd, "kind": "xml-schema"},
     ).json()
     assert report["valid"] is False
-    assert report["issues"]
-    assert report["issues"][0]["message"]
+    issue = next(item for item in report["issues"] if "SOMETIMES" in item["message"])
+    assert issue["location"].endswith("]")
+    assert "SOMETIMES" in broken.splitlines()[issue["line"] - 1]
 
 
 def test_validate_json_invalid(app_client: TestClient, object_set_schema: str) -> None:
