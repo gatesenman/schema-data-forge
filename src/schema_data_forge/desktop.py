@@ -45,7 +45,7 @@ def _open_window(url: str) -> None:
         input("Web UI 已在浏览器中打开，按 Enter 退出…")
         return
 
-    webview.create_window(WINDOW_TITLE, url, width=1600, height=1000)
+    webview.create_window(WINDOW_TITLE, url, width=1600, height=1000, min_size=(1120, 720))
     webview.start()
 
 

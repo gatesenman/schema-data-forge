@@ -29,6 +29,11 @@
 html, body {
   height: 100%;
   margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
   background:
     radial-gradient(1100px 500px at 85% -10%, rgba(91, 140, 255, 0.07), transparent 60%),
     radial-gradient(900px 460px at -10% 110%, rgba(139, 108, 255, 0.06), transparent 60%),
@@ -206,6 +211,9 @@ select:disabled { color: var(--text-faint); cursor: not-allowed; opacity: 0.7; }
 textarea { resize: vertical; }
 #instructions { min-height: 72px; }
 input, select, textarea { min-width: 0; }
+input, textarea { user-select: text; -webkit-user-select: text; cursor: text; }
+.issues td, .log li { user-select: text; -webkit-user-select: text; cursor: auto; }
+.issues tbody tr:not(.empty):hover td { cursor: pointer; }
 
 .code {
   flex: 1;
@@ -382,6 +390,7 @@ details.config > label, details.config > .row { margin-top: 8px; }
 }
 
 @media (max-width: 1100px) {
-  .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; overflow-y: auto; }
   .pane-ai { grid-row: auto; }
+  .pane { min-height: 320px; }
 }
