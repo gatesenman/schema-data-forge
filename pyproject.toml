@@ -1,0 +1,63 @@
+[project]
+name = "schema-data-forge"
+version = "0.1.0"
+description = "Web editor that generates sample data from JSON Schema and XML Schema with an LLM, guaranteed to pass schema validation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "jsonschema>=4.21.0",
+    "xmlschema>=3.3.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+desktop = [
+    "pywebview>=5.1",
+]
+dev = [
+    "pytest>=8.1.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+]
+
+[project.scripts]
+schema-data-forge = "schema_data_forge.desktop:main"
+schema-data-forge-cli = "schema_data_forge.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+schema_data_forge = [
+    "example_schemas/*.xsd",
+    "example_schemas/*.json",
+    "web/static/*",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["schema_data_forge"]
+mypy_path = "src"
+strict = true
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = ["xmlschema.*", "jsonschema.*", "webview.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["e2e: tests that call the live DeepSeek API"]
