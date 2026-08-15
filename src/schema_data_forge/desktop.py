@@ -19,6 +19,12 @@ DEFAULT_HOST = "127.0.0.1"
 WINDOW_TITLE = "Schema Data Forge"
 
 
+def _say(message: str) -> None:
+    """Print without crashing on consoles that cannot encode the message."""
+    with contextlib.suppress(OSError, ValueError, UnicodeError):
+        print(message)
+
+
 def _free_port(host: str) -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((host, 0))
@@ -42,7 +48,10 @@ def _open_window(url: str) -> None:
         import webview
     except ImportError:
         webbrowser.open(url)
-        input("Web UI 已在浏览器中打开，按 Enter 退出…")
+        _say("Web UI 已在浏览器中打开，按 Ctrl+C 退出…")
+        with contextlib.suppress(KeyboardInterrupt):
+            while True:
+                time.sleep(1.0)
         return
 
     webview.create_window(WINDOW_TITLE, url, width=1600, height=1000, min_size=(1120, 720))
@@ -64,10 +73,10 @@ def main(argv: list[str] | None = None) -> int:
     thread.start()
 
     if not _wait_until_ready(url):
-        print(f"服务器启动失败：{url}")
+        _say(f"服务器启动失败：{url}")
         return 1
 
-    print(f"Schema Data Forge 正在运行：{url}")
+    _say(f"Schema Data Forge 正在运行：{url}")
     if args.browser:
         webbrowser.open(url)
         with contextlib.suppress(KeyboardInterrupt):
