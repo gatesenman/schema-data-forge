@@ -24,10 +24,24 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "dist\SchemaDataForge.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: WebView2Missing
 
 [Icons]
 Name: "{group}\Schema Data Forge"; Filename: "{app}\SchemaDataForge.exe"
 Name: "{autodesktop}\Schema Data Forge"; Filename: "{app}\SchemaDataForge.exe"; Tasks: desktopicon
 
 [Run]
+Filename: "{tmp}\MicrosoftEdgeWebView2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Installing Microsoft Edge WebView2 Runtime..."; Check: WebView2Missing
 Filename: "{app}\SchemaDataForge.exe"; Description: "{cm:LaunchProgram,Schema Data Forge}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function WebView2Missing: Boolean;
+var
+  Version: string;
+begin
+  Result := not (
+    (RegQueryStringValue(HKLM, 'SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version) and (Version <> '') and (Version <> '0.0.0.0')) or
+    (RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version) and (Version <> '') and (Version <> '0.0.0.0')) or
+    (RegQueryStringValue(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version) and (Version <> '') and (Version <> '0.0.0.0'))
+  );
+end;

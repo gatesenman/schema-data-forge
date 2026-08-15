@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import socket
+import sys
 import threading
 import time
 import urllib.error
@@ -42,20 +43,41 @@ def _wait_until_ready(url: str, timeout: float = 20.0) -> bool:
     return False
 
 
+def _alert(message: str) -> None:
+    """Show a native warning dialog when possible."""
+    if sys.platform == "win32":
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(0, message, WINDOW_TITLE, 0x30)
+
+
+def _browser_fallback(url: str) -> None:
+    webbrowser.open(url)
+    _say("Web UI 已在浏览器中打开，按 Ctrl+C 退出…")
+    with contextlib.suppress(KeyboardInterrupt):
+        while True:
+            time.sleep(1.0)
+
+
 def _open_window(url: str) -> None:
     """Open ``url`` in a native window, falling back to the default browser."""
     try:
         import webview
     except ImportError:
-        webbrowser.open(url)
-        _say("Web UI 已在浏览器中打开，按 Ctrl+C 退出…")
-        with contextlib.suppress(KeyboardInterrupt):
-            while True:
-                time.sleep(1.0)
+        _browser_fallback(url)
         return
 
-    webview.create_window(WINDOW_TITLE, url, width=1600, height=1000, min_size=(1120, 720))
-    webview.start()
+    try:
+        webview.create_window(WINDOW_TITLE, url, width=1600, height=1000, min_size=(1120, 720))
+        webview.start()
+    except Exception:
+        if sys.platform == "win32":
+            _alert(
+                "无法创建桌面窗口，已改用浏览器打开。\n\n"
+                "请安装 Microsoft Edge WebView2 Runtime 后重新启动：\n"
+                "https://developer.microsoft.com/microsoft-edge/webview2/"
+            )
+        _browser_fallback(url)
 
 
 def main(argv: list[str] | None = None) -> int:
