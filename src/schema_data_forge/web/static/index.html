@@ -7,23 +7,13 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">SDF</span>
-      <div>
-        <h1>Schema Data Forge</h1>
-        <p>JSON Schema / XML Schema → AI 生成示例数据 → 必须通过校验</p>
-      </div>
-    </div>
-    <div class="topbar-status">
-      <span id="connection" class="pill pill-idle">就绪</span>
-    </div>
-  </header>
-
   <main class="layout">
     <!-- 左：AI 面板 -->
     <section class="pane pane-ai">
-      <h2>AI 生成</h2>
+      <div class="pane-head">
+        <h2>AI 生成</h2>
+        <span id="connection" class="pill pill-idle">就绪</span>
+      </div>
 
       <details class="config" open>
         <summary>DeepSeek 设置</summary>
