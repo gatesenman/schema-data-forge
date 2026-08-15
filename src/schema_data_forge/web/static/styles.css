@@ -95,7 +95,7 @@ body { display: flex; flex-direction: column; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
 label.grow { flex: 0 0 auto; }
 .row { display: flex; gap: 10px; }
-.row label { flex: 1; }
+.row label { flex: 1; min-width: 0; }
 small { color: #6f7789; font-size: 11px; }
 
 input, select, textarea, button {
@@ -113,6 +113,7 @@ select:disabled { color: #5b6272; cursor: not-allowed; }
 
 textarea { resize: vertical; }
 #instructions { min-height: 72px; }
+input, select, textarea { min-width: 0; }
 
 .code {
   flex: 1;
@@ -200,10 +201,11 @@ details.config > label, details.config > .row { margin-top: 8px; }
 
 @media (max-height: 820px) {
   .code { min-height: 80px; }
-  .log { min-height: 52px; }
+  .log { flex: 1 1 auto; min-height: 44px; }
   .pane { padding: 10px; gap: 8px; }
   .layout { gap: 8px; padding: 8px; }
-  #instructions { min-height: 52px; }
+  #instructions { min-height: 48px; height: 48px; }
+  .pane-ai small { display: none; }
 }
 
 @media (max-width: 1100px) {
