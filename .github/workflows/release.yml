@@ -16,10 +16,13 @@ jobs:
         include:
           - os: windows-latest
             artifact: SchemaDataForge-windows
+            installer: SchemaDataForge-Setup.exe
           - os: macos-latest
             artifact: SchemaDataForge-macos
+            installer: SchemaDataForge.dmg
           - os: ubuntu-latest
             artifact: SchemaDataForge-linux
+            installer: SchemaDataForge.deb
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -70,12 +73,55 @@ jobs:
         run: |
           chmod +x dist/SchemaDataForge
           zip -j ${{ matrix.artifact }}.zip dist/SchemaDataForge
+      - name: Installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ver = if ($env:GITHUB_REF_NAME -match '^v(.+)$') { $Matches[1] } else { '0.0.0' }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion=$ver installer.iss
+          Move-Item installer/SchemaDataForge-Setup.exe SchemaDataForge-Setup.exe
+      - name: Installer (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir dmgroot
+          cp -R dist/SchemaDataForge.app dmgroot/
+          ln -s /Applications dmgroot/Applications
+          hdiutil create -volname "Schema Data Forge" -srcfolder dmgroot -ov -format UDZO SchemaDataForge.dmg
+      - name: Installer (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          [ "$VER" = "$GITHUB_REF_NAME" ] && VER=0.0.0
+          mkdir -p pkg/DEBIAN pkg/usr/bin pkg/usr/share/applications pkg/usr/share/icons/hicolor/1024x1024/apps
+          cp dist/SchemaDataForge pkg/usr/bin/schema-data-forge
+          cp assets/icon.png pkg/usr/share/icons/hicolor/1024x1024/apps/schema-data-forge.png
+          printf '%s\n' \
+            '[Desktop Entry]' \
+            'Type=Application' \
+            'Name=Schema Data Forge' \
+            'Comment=JSON Schema / XSD AI sample data generator' \
+            'Exec=schema-data-forge' \
+            'Icon=schema-data-forge' \
+            'Categories=Development;' \
+            > pkg/usr/share/applications/schema-data-forge.desktop
+          printf '%s\n' \
+            'Package: schema-data-forge' \
+            "Version: $VER" \
+            'Architecture: amd64' \
+            'Maintainer: gaosichun <gaosichun@hotmail.com>' \
+            'Description: JSON Schema / XSD AI sample data generator desktop app' \
+            > pkg/DEBIAN/control
+          dpkg-deb --build pkg SchemaDataForge.deb
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}.zip
+          path: |
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.installer }}
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact }}.zip
+          files: |
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.installer }}
