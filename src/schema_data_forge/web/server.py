@@ -11,7 +11,9 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
 
+import tomli_w
 import uvicorn
+import yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +64,11 @@ class ReportModel(BaseModel):
 class FormatBody(BaseModel):
     document: str
     kind: SchemaKind
+
+
+class ConvertBody(BaseModel):
+    document: str
+    target: Literal["yaml", "toml"]
 
 
 class RootElementsBody(BaseModel):
@@ -186,6 +193,23 @@ def create_app(client_factory: ClientFactory | None = None) -> FastAPI:
     @app.post("/api/format", response_model=dict[str, str])
     def format_body(body: FormatBody) -> dict[str, str]:
         return {"document": format_document(body.document, body.kind)}
+
+    @app.post("/api/convert", response_model=dict[str, str])
+    def convert_document(body: ConvertBody) -> dict[str, str]:
+        try:
+            parsed: Any = json.loads(body.document)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail=f"JSON 解析失败：{exc}") from exc
+        if body.target == "yaml":
+            return {
+                "document": yaml.safe_dump(parsed, allow_unicode=True, sort_keys=False, indent=2)
+            }
+        if not isinstance(parsed, dict):
+            raise HTTPException(status_code=400, detail="TOML 仅支持顶层为对象的 JSON")
+        try:
+            return {"document": tomli_w.dumps(parsed)}
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=f"无法转换为 TOML：{exc}") from exc
 
     @app.post("/api/generate")
     def generate(body: GenerateBody) -> StreamingResponse:

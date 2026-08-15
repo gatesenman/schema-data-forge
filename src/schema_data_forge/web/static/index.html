@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schema Data Forge</title>
+  <link rel="stylesheet" href="/static/vendor/codemirror.min.css" />
+  <link rel="stylesheet" href="/static/vendor/lint.min.css" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
@@ -70,6 +72,7 @@
           </select>
           <select id="rootElement" aria-label="根元素"></select>
           <select id="example" aria-label="示例"></select>
+          <button id="schemaFormat">格式化</button>
           <label class="file-button">
             打开文件
             <input id="schemaFile" type="file" accept=".xsd,.json,.xml" hidden />
@@ -85,6 +88,11 @@
         <h2>生成的数据</h2>
         <div class="controls">
           <span id="verdict" class="verdict">尚未校验</span>
+          <select id="dataView" aria-label="展示格式">
+            <option value="native">JSON</option>
+            <option value="yaml">YAML</option>
+            <option value="toml">TOML</option>
+          </select>
           <button id="validate">重新校验</button>
           <button id="format">格式化</button>
           <button id="download">下载</button>
@@ -104,6 +112,19 @@
     </section>
   </main>
 
+  <script src="/static/vendor/codemirror.min.js"></script>
+  <script src="/static/vendor/javascript.min.js"></script>
+  <script src="/static/vendor/xml.min.js"></script>
+  <script src="/static/vendor/yaml.min.js"></script>
+  <script src="/static/vendor/toml.min.js"></script>
+  <script src="/static/vendor/matchbrackets.min.js"></script>
+  <script src="/static/vendor/closebrackets.min.js"></script>
+  <script src="/static/vendor/closetag.min.js"></script>
+  <script src="/static/vendor/xml-fold.min.js"></script>
+  <script src="/static/vendor/placeholder.min.js"></script>
+  <script src="/static/vendor/lint.min.js"></script>
+  <script src="/static/vendor/jsonlint.min.js"></script>
+  <script src="/static/vendor/json-lint.min.js"></script>
   <script src="/static/app.js" type="module"></script>
 </body>
 </html>
