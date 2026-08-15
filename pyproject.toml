@@ -1,17 +1,21 @@
 [project]
 name = "schema-data-forge"
 version = "0.1.0"
-description = "Desktop editor that generates sample data from JSON Schema and XML Schema with an LLM, guaranteed to pass schema validation"
+description = "Web editor that generates sample data from JSON Schema and XML Schema with an LLM, guaranteed to pass schema validation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "PySide6>=6.7.0",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
     "jsonschema>=4.21.0",
     "xmlschema>=3.3.0",
     "httpx>=0.27.0",
 ]
 
 [project.optional-dependencies]
+desktop = [
+    "pywebview>=5.1",
+]
 dev = [
     "pytest>=8.1.0",
     "ruff>=0.5.0",
@@ -19,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-schema-data-forge = "schema_data_forge.app:main"
+schema-data-forge = "schema_data_forge.desktop:main"
 schema-data-forge-cli = "schema_data_forge.cli:main"
 
 [build-system]
@@ -30,7 +34,11 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-schema_data_forge = ["example_schemas/*.xsd", "example_schemas/*.json"]
+schema_data_forge = [
+    "example_schemas/*.xsd",
+    "example_schemas/*.json",
+    "web/static/*",
+]
 
 [tool.ruff]
 line-length = 100
@@ -47,7 +55,7 @@ strict = true
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
-module = ["xmlschema.*", "jsonschema.*"]
+module = ["xmlschema.*", "jsonschema.*", "webview.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schema Data Forge</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">SDF</span>
+      <div>
+        <h1>Schema Data Forge</h1>
+        <p>JSON Schema / XML Schema → AI 生成示例数据 → 必须通过校验</p>
+      </div>
+    </div>
+    <div class="topbar-status">
+      <span id="connection" class="pill pill-idle">就绪</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 左：AI 面板 -->
+    <section class="pane pane-ai">
+      <h2>AI 生成</h2>
+
+      <details class="config" open>
+        <summary>DeepSeek 设置</summary>
+        <label>API Key
+          <input id="apiKey" type="password" placeholder="sk-…（也可用环境变量 DEEPSEEK_API_KEY）" autocomplete="off" />
+        </label>
+        <div class="row">
+          <label>模型
+            <input id="model" list="modelOptions" value="deepseek-chat" />
+            <datalist id="modelOptions">
+              <option value="deepseek-chat"></option>
+              <option value="deepseek-reasoner"></option>
+            </datalist>
+          </label>
+          <label>Base URL
+            <input id="baseUrl" value="https://api.deepseek.com" />
+          </label>
+        </div>
+        <div class="row">
+          <label>Temperature
+            <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.4" />
+          </label>
+          <label>最大尝试次数
+            <input id="maxAttempts" type="number" min="1" max="10" step="1" value="4" />
+            <small>校验失败时把错误回灌给模型重试</small>
+          </label>
+        </div>
+      </details>
+
+      <label class="grow">生成要求（附加到提示词）
+        <textarea id="instructions" rows="6" placeholder="例如：以航班运营建模，包含 3 个对象类型和 2 个链接类型…"></textarea>
+      </label>
+
+      <div class="actions">
+        <button id="generate" class="primary">生成并校验</button>
+        <button id="stop" class="ghost" disabled>停止</button>
+      </div>
+
+      <div class="log-header">
+        <h3>生成 / 校验日志</h3>
+        <button id="clearLog" class="link">清空</button>
+      </div>
+      <ol id="log" class="log"></ol>
+    </section>
+
+    <!-- 右上：Schema 定义 -->
+    <section class="pane pane-schema">
+      <div class="pane-head">
+        <h2>Schema 定义</h2>
+        <div class="controls">
+          <select id="kind" aria-label="Schema 类型">
+            <option value="xml-schema">XML Schema (XSD)</option>
+            <option value="json-schema">JSON Schema</option>
+          </select>
+          <select id="rootElement" aria-label="根元素"></select>
+          <select id="example" aria-label="示例"></select>
+          <label class="file-button">
+            打开文件
+            <input id="schemaFile" type="file" accept=".xsd,.json,.xml" hidden />
+          </label>
+        </div>
+      </div>
+      <textarea id="schema" class="code" spellcheck="false" placeholder="粘贴 JSON Schema 或 XSD"></textarea>
+    </section>
+
+    <!-- 右下：生成的数据 + 校验结果 -->
+    <section class="pane pane-data">
+      <div class="pane-head">
+        <h2>生成的数据</h2>
+        <div class="controls">
+          <span id="verdict" class="verdict">尚未校验</span>
+          <button id="validate">重新校验</button>
+          <button id="format">格式化</button>
+          <button id="download">下载</button>
+        </div>
+      </div>
+      <textarea id="data" class="code" spellcheck="false" placeholder="生成结果会显示在这里，可直接编辑后重新校验"></textarea>
+      <div class="issues">
+        <table>
+          <thead>
+            <tr><th>位置</th><th>行</th><th>校验错误</th></tr>
+          </thead>
+          <tbody id="issues">
+            <tr class="empty"><td colspan="3">暂无校验错误</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>

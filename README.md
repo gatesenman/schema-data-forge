@@ -1,6 +1,6 @@
 # Schema Data Forge
 
-桌面版示例数据生成器：给定 **JSON Schema** 或 **XML Schema (XSD)**，调用 DeepSeek 以结构化输出生成示例数据，
+Web 版示例数据生成器：给定 **JSON Schema** 或 **XML Schema (XSD)**，调用 DeepSeek 以结构化输出生成示例数据，
 并且**必须通过 schema 校验**才算成功——校验失败时把逐条校验错误回灌给模型自动修复，直到通过或达到最大尝试次数。
 
 内置示例使用 Palantir Foundry 风格的本体模型（object type / link type / action type）XSD。
@@ -9,9 +9,9 @@
 
 - **左侧：AI 面板** — DeepSeek API Key、模型、Base URL、temperature、最大尝试次数；生成要求（追加到提示词）；
   生成按钮与生成/校验日志（每一次尝试的校验结果）。
-- **右上：Schema 定义** — schema 类型、XSD 根元素、示例选择、打开文件；带语法高亮的编辑器。
-- **右下：生成的数据 + 校验结果** — 可直接编辑并「重新校验」「格式化」「保存」；下方列出每条校验错误的位置、行号与信息，
-  双击可跳到 XML 对应行。
+- **右上：Schema 定义** — schema 类型（XSD / JSON Schema）、XSD 根元素、示例选择、打开本地文件。
+- **右下：生成的数据 + 校验结果** — 可直接编辑并「重新校验」「格式化」「下载」；下方列出每条校验错误的位置、行号与信息，
+  点击可跳到对应行。
 
 ## 运行
 
@@ -19,8 +19,11 @@
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 
-# 图形界面
-DEEPSEEK_API_KEY=sk-... .venv/bin/python -m schema_data_forge.app
+# Web UI（浏览器打开 http://127.0.0.1:8765）
+DEEPSEEK_API_KEY=sk-... .venv/bin/python -m schema_data_forge.web
+
+# 桌面窗口模式（需要 uv pip install -e ".[desktop]"，缺少 pywebview 时回退到默认浏览器）
+DEEPSEEK_API_KEY=sk-... .venv/bin/python -m schema_data_forge.desktop
 
 # 无界面（脚本 / CI 用）
 DEEPSEEK_API_KEY=sk-... .venv/bin/python -m schema_data_forge.cli \
@@ -28,7 +31,10 @@ DEEPSEEK_API_KEY=sk-... .venv/bin/python -m schema_data_forge.cli \
 ```
 
 Windows PowerShell 下把 `.venv/bin/python` 换成 `.venv\Scripts\python.exe`，
-用 `$env:DEEPSEEK_API_KEY="sk-..."` 设置密钥。API Key 也可以直接填在左侧面板里（保存在本机 `QSettings`，不入库）。
+用 `$env:DEEPSEEK_API_KEY="sk-..."` 设置密钥。API Key 也可以直接填在左侧面板里（仅存在浏览器 `localStorage`，不入库）。
+
+后端接口：`GET /api/examples`、`POST /api/root-elements`、`POST /api/validate`、`POST /api/format`、
+`POST /api/generate`（SSE：`start` / `attempt` / `done` / `error`，每次尝试的校验结果实时推送到左侧日志）。
 
 ## 工作原理
 

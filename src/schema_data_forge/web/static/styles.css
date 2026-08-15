@@ -1,0 +1,203 @@
+:root {
+  --bg: #0f1117;
+  --bg-elevated: #171a23;
+  --bg-input: #10131b;
+  --border: #262b38;
+  --text: #e6e9f0;
+  --text-dim: #9aa3b5;
+  --accent: #4f8cff;
+  --accent-dark: #2f6ae0;
+  --ok: #3ddc84;
+  --err: #ff6b6b;
+  --warn: #ffb454;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, "SFMono-Regular", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+body { display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), #7d5cff);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.topbar h1 { margin: 0; font-size: 15px; font-weight: 600; }
+.topbar p { margin: 0; font-size: 12px; color: var(--text-dim); }
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-dim);
+}
+.pill-busy { color: var(--warn); border-color: #4a3a1d; }
+.pill-ok { color: var(--ok); border-color: #1e4a32; }
+.pill-err { color: var(--err); border-color: #4a2222; }
+
+.layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 26%) 1fr;
+  grid-template-rows: minmax(0, 42%) minmax(0, 58%);
+  gap: 12px;
+  padding: 12px;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.pane-ai { grid-row: span 2; }
+
+.pane h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.pane h3 { margin: 0; font-size: 12px; color: var(--text-dim); }
+
+.pane-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+label.grow { flex: 0 0 auto; }
+.row { display: flex; gap: 10px; }
+.row label { flex: 1; }
+small { color: #6f7789; font-size: 11px; }
+
+input, select, textarea, button {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+select { cursor: pointer; }
+select:disabled { color: #5b6272; cursor: not-allowed; }
+
+textarea { resize: vertical; }
+
+.code {
+  flex: 1;
+  min-height: 120px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  resize: none;
+}
+
+button { cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.primary { background: var(--accent); border-color: var(--accent-dark); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--accent-dark); }
+button.ghost { background: transparent; }
+button.link { background: none; border: none; color: var(--text-dim); padding: 0; font-size: 12px; }
+button.link:hover { color: var(--accent); }
+
+.file-button {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+}
+.file-button:hover { border-color: var(--accent); }
+
+details.config {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+details.config summary { cursor: pointer; color: var(--text-dim); font-size: 12px; }
+details.config[open] summary { margin-bottom: 6px; }
+details.config > label, details.config > .row { margin-top: 8px; }
+
+.actions { display: flex; gap: 8px; }
+.actions button { flex: 1; }
+
+.log-header { display: flex; align-items: center; justify-content: space-between; }
+
+.log {
+  flex: 1;
+  min-height: 90px;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-input);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.log li { padding: 3px 0; border-bottom: 1px solid #1d212b; white-space: pre-wrap; word-break: break-word; }
+.log li:last-child { border-bottom: none; }
+.log .ok { color: var(--ok); }
+.log .err { color: var(--err); }
+.log .info { color: var(--text-dim); }
+
+.verdict { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-dim); }
+.verdict.ok { color: var(--ok); border-color: #1e4a32; }
+.verdict.err { color: var(--err); border-color: #4a2222; }
+
+.issues { max-height: 34%; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+.issues table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.issues th, .issues td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #1d212b; vertical-align: top; }
+.issues th { position: sticky; top: 0; background: var(--bg-input); color: var(--text-dim); font-weight: 500; }
+.issues td:first-child { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+.issues td:nth-child(2) { font-family: var(--mono); color: var(--text-dim); }
+.issues tr.empty td { color: #5b6272; text-align: center; }
+.issues tbody tr:not(.empty):hover { background: #1c2130; cursor: pointer; }
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .pane-ai { grid-row: auto; }
+}
