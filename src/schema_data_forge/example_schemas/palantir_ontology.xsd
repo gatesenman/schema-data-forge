@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A Palantir Foundry style ontology model: object types with typed properties,
+  link types between them and action types that write back to the ontology.
+  The schema is deliberately strict (patterns, enumerations, cardinalities,
+  key/keyref constraints) so that generated sample data really has to be correct.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ont="https://palantir.com/ontology/v1"
+           targetNamespace="https://palantir.com/ontology/v1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <xs:simpleType name="ApiName">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z][a-zA-Z0-9]{2,63}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DatasetRid">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="ri\.foundry\.main\.dataset\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DisplayText">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="2"/>
+      <xs:maxLength value="120"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="BaseType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="String"/>
+      <xs:enumeration value="Integer"/>
+      <xs:enumeration value="Long"/>
+      <xs:enumeration value="Double"/>
+      <xs:enumeration value="Boolean"/>
+      <xs:enumeration value="Date"/>
+      <xs:enumeration value="Timestamp"/>
+      <xs:enumeration value="GeoPoint"/>
+      <xs:enumeration value="Attachment"/>
+      <xs:enumeration value="StringArray"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Visibility">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NORMAL"/>
+      <xs:enumeration value="PROMINENT"/>
+      <xs:enumeration value="HIDDEN"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LifecycleStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="EXPERIMENTAL"/>
+      <xs:enumeration value="ACTIVE"/>
+      <xs:enumeration value="DEPRECATED"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Cardinality">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ONE_TO_ONE"/>
+      <xs:enumeration value="ONE_TO_MANY"/>
+      <xs:enumeration value="MANY_TO_MANY"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ActionOperation">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CREATE_OBJECT"/>
+      <xs:enumeration value="MODIFY_OBJECT"/>
+      <xs:enumeration value="DELETE_OBJECT"/>
+      <xs:enumeration value="CREATE_LINK"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SemanticVersion">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]+\.[0-9]+\.[0-9]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ValueConstraint">
+    <xs:choice>
+      <xs:element name="allowedValues">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="value" type="ont:DisplayText" maxOccurs="24"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="pattern" type="xs:string"/>
+      <xs:element name="range">
+        <xs:complexType>
+          <xs:attribute name="min" type="xs:decimal" use="required"/>
+          <xs:attribute name="max" type="xs:decimal" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="Property">
+    <xs:sequence>
+      <xs:element name="displayName" type="ont:DisplayText"/>
+      <xs:element name="description" type="ont:DisplayText" minOccurs="0"/>
+      <xs:element name="constraint" type="ont:ValueConstraint" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+    <xs:attribute name="baseType" type="ont:BaseType" use="required"/>
+    <xs:attribute name="required" type="xs:boolean" default="false"/>
+    <xs:attribute name="searchable" type="xs:boolean" default="false"/>
+    <xs:attribute name="visibility" type="ont:Visibility" default="NORMAL"/>
+  </xs:complexType>
+
+  <xs:complexType name="Datasource">
+    <xs:attribute name="datasetRid" type="ont:DatasetRid" use="required"/>
+    <xs:attribute name="primaryKeyColumn" type="xs:NCName" use="required"/>
+    <xs:attribute name="incremental" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="ObjectType">
+    <xs:sequence>
+      <xs:element name="displayName" type="ont:DisplayText"/>
+      <xs:element name="pluralDisplayName" type="ont:DisplayText"/>
+      <xs:element name="description" type="ont:DisplayText" minOccurs="0"/>
+      <xs:element name="datasource" type="ont:Datasource"/>
+      <xs:element name="properties">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="property" type="ont:Property" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+    <xs:attribute name="primaryKeyProperty" type="ont:ApiName" use="required"/>
+    <xs:attribute name="titleProperty" type="ont:ApiName" use="required"/>
+    <xs:attribute name="status" type="ont:LifecycleStatus" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="LinkType">
+    <xs:sequence>
+      <xs:element name="displayName" type="ont:DisplayText"/>
+      <xs:element name="reverseDisplayName" type="ont:DisplayText"/>
+    </xs:sequence>
+    <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+    <xs:attribute name="cardinality" type="ont:Cardinality" use="required"/>
+    <xs:attribute name="sourceObjectType" type="ont:ApiName" use="required"/>
+    <xs:attribute name="targetObjectType" type="ont:ApiName" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="ActionType">
+    <xs:sequence>
+      <xs:element name="displayName" type="ont:DisplayText"/>
+      <xs:element name="parameters" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="parameter" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="displayName" type="ont:DisplayText"/>
+                </xs:sequence>
+                <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+                <xs:attribute name="baseType" type="ont:BaseType" use="required"/>
+                <xs:attribute name="required" type="xs:boolean" default="true"/>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+    <xs:attribute name="operation" type="ont:ActionOperation" use="required"/>
+    <xs:attribute name="appliesTo" type="ont:ApiName" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="ontology">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="metadata">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="owner" type="ont:DisplayText"/>
+              <xs:element name="sourceSystem" type="ont:DisplayText" maxOccurs="5"/>
+            </xs:sequence>
+            <xs:attribute name="version" type="ont:SemanticVersion" use="required"/>
+            <xs:attribute name="generatedAt" type="xs:dateTime" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="objectTypes">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="objectType" type="ont:ObjectType" maxOccurs="unbounded">
+                <xs:unique name="uniquePropertyApiName">
+                  <xs:selector xpath="ont:properties/ont:property"/>
+                  <xs:field xpath="@apiName"/>
+                </xs:unique>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="linkTypes" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="linkType" type="ont:LinkType" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="actionTypes" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="actionType" type="ont:ActionType" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="apiName" type="ont:ApiName" use="required"/>
+      <xs:attribute name="namespace" type="xs:NCName" use="required"/>
+    </xs:complexType>
+
+    <xs:key name="objectTypeKey">
+      <xs:selector xpath="ont:objectTypes/ont:objectType"/>
+      <xs:field xpath="@apiName"/>
+    </xs:key>
+    <xs:keyref name="linkSourceRef" refer="ont:objectTypeKey">
+      <xs:selector xpath="ont:linkTypes/ont:linkType"/>
+      <xs:field xpath="@sourceObjectType"/>
+    </xs:keyref>
+    <xs:keyref name="linkTargetRef" refer="ont:objectTypeKey">
+      <xs:selector xpath="ont:linkTypes/ont:linkType"/>
+      <xs:field xpath="@targetObjectType"/>
+    </xs:keyref>
+    <xs:keyref name="actionAppliesToRef" refer="ont:objectTypeKey">
+      <xs:selector xpath="ont:actionTypes/ont:actionType"/>
+      <xs:field xpath="@appliesTo"/>
+    </xs:keyref>
+  </xs:element>
+
+</xs:schema>
