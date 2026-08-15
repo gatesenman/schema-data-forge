@@ -21,13 +21,117 @@ const els = {
   verdict: $("verdict"),
   validate: $("validate"),
   format: $("format"),
+  schemaFormat: $("schemaFormat"),
   download: $("download"),
+  dataView: $("dataView"),
   connection: $("connection"),
 };
 
 const SETTINGS_KEY = "schema-data-forge.settings";
 let examples = [];
 let controller = null;
+
+// ------------------------------------------------------------------ editors
+
+CodeMirror.registerHelper("lint", "xml", (text) => {
+  if (!text.trim()) return [];
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  const error = doc.querySelector("parsererror");
+  if (!error) return [];
+  const message = (error.textContent || "XML 解析错误").trim();
+  const match = message.match(/line[ :]+(\d+)/i) || message.match(/第\s*(\d+)\s*行/);
+  const line = match ? Math.max(0, Number(match[1]) - 1) : 0;
+  return [
+    {
+      from: CodeMirror.Pos(line, 0),
+      to: CodeMirror.Pos(line, 1e6),
+      message: message.split("\n").filter(Boolean).slice(0, 2).join(" "),
+      severity: "error",
+    },
+  ];
+});
+
+function cmMode() {
+  return els.kind.value === "xml-schema" ? "application/xml" : "application/json";
+}
+
+function makeEditor(textarea) {
+  return CodeMirror.fromTextArea(textarea, {
+    mode: cmMode(),
+    lineNumbers: true,
+    lineWrapping: false,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    autoCloseTags: true,
+    lint: true,
+    tabSize: 2,
+    indentUnit: 2,
+    placeholder: textarea.placeholder,
+    gutters: ["CodeMirror-lint-markers", "CodeMirror-linenumbers"],
+  });
+}
+
+const schemaEditor = makeEditor(els.schema);
+const dataEditor = makeEditor(els.data);
+
+const getSchema = () => schemaEditor.getValue();
+const setSchema = (text) => schemaEditor.setValue(text);
+
+let nativeData = "";
+
+const getData = () => (els.dataView.value === "native" ? dataEditor.getValue() : nativeData);
+
+function setData(text) {
+  nativeData = text;
+  els.dataView.value = "native";
+  dataEditor.setOption("readOnly", false);
+  dataEditor.setOption("mode", cmMode());
+  dataEditor.setOption("lint", true);
+  dataEditor.setValue(text);
+  dataViewPrev = "native";
+  syncViewButtons();
+}
+
+function syncViewButtons() {
+  const converted = els.dataView.value !== "native";
+  els.validate.disabled = converted;
+  els.format.disabled = converted;
+}
+
+function syncEditorModes() {
+  const mode = cmMode();
+  schemaEditor.setOption("mode", mode);
+  if (els.dataView.value === "native") dataEditor.setOption("mode", mode);
+  const isXml = els.kind.value === "xml-schema";
+  els.dataView.options[0].text = isXml ? "XML" : "JSON";
+  els.dataView.disabled = isXml;
+  if (isXml && els.dataView.value !== "native") setData(nativeData);
+}
+
+async function applyDataView() {
+  const view = els.dataView.value;
+  if (view === "native") {
+    dataEditor.setOption("readOnly", false);
+    dataEditor.setOption("mode", cmMode());
+    dataEditor.setOption("lint", true);
+    dataEditor.setValue(nativeData);
+  } else {
+    try {
+      const { document: converted } = await api("/api/convert", {
+        document: nativeData,
+        target: view,
+      });
+      dataEditor.setValue(converted);
+      dataEditor.setOption("mode", view === "yaml" ? "text/x-yaml" : "text/x-toml");
+      dataEditor.setOption("lint", false);
+      dataEditor.setOption("readOnly", true);
+    } catch (error) {
+      log(`转换为 ${view.toUpperCase()} 失败：${error.message}`, "err");
+      els.dataView.value = "native";
+    }
+  }
+  syncViewButtons();
+}
 
 // ----------------------------------------------------------------- utilities
 
@@ -131,12 +235,13 @@ function renderReport(report) {
 }
 
 function jumpToLine(line) {
-  const lines = els.data.value.split("\n");
-  const offset = lines.slice(0, Math.max(0, line - 1)).reduce((n, l) => n + l.length + 1, 0);
-  els.data.focus();
-  els.data.setSelectionRange(offset, offset + (lines[line - 1] || "").length);
-  const ratio = (line - 1) / Math.max(1, lines.length);
-  els.data.scrollTop = ratio * els.data.scrollHeight;
+  const target = Math.max(0, line - 1);
+  dataEditor.focus();
+  dataEditor.setSelection(
+    { line: target, ch: 0 },
+    { line: target, ch: (dataEditor.getLine(target) || "").length },
+  );
+  dataEditor.scrollIntoView({ line: target, ch: 0 }, 120);
 }
 
 function kindLabel() {
@@ -155,7 +260,7 @@ async function refreshRootElements() {
   }
   let names = [];
   try {
-    names = await api("/api/root-elements", { schemaText: els.schema.value });
+    names = await api("/api/root-elements", { schemaText: getSchema() });
   } catch {
     names = [];
   }
@@ -168,7 +273,8 @@ async function refreshRootElements() {
 
 function applyExample(example) {
   els.kind.value = example.kind;
-  els.schema.value = example.schemaText;
+  syncEditorModes();
+  setSchema(example.schemaText);
   els.instructions.value = example.instructions;
   refreshRootElements().then(() => {
     if (example.rootElement) els.rootElement.value = example.rootElement;
@@ -200,7 +306,7 @@ function handleEvent(event, payload) {
     return;
   }
   if (event === "attempt") {
-    if (payload.document) els.data.value = payload.document;
+    if (payload.document) setData(payload.document);
     renderReport(payload.report);
     const report = payload.report;
     if (report.valid) {
@@ -235,7 +341,7 @@ function handleEvent(event, payload) {
 }
 
 async function generate() {
-  if (!els.schema.value.trim()) {
+  if (!getSchema().trim()) {
     log("请先填入 JSON Schema 或 XSD", "err");
     return;
   }
@@ -249,7 +355,7 @@ async function generate() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        schemaText: els.schema.value,
+        schemaText: getSchema(),
         kind: els.kind.value,
         instructions: els.instructions.value,
         rootElement: els.rootElement.disabled ? "" : els.rootElement.value,
@@ -304,14 +410,14 @@ els.stop.addEventListener("click", () => controller?.abort());
 els.clearLog.addEventListener("click", () => (els.log.innerHTML = ""));
 
 els.validate.addEventListener("click", async () => {
-  if (!els.data.value.trim()) {
+  if (!getData().trim()) {
     log("没有可校验的数据", "err");
     return;
   }
   try {
     const report = await api("/api/validate", {
-      document: els.data.value,
-      schemaText: els.schema.value,
+      document: getData(),
+      schemaText: getSchema(),
       kind: els.kind.value,
     });
     renderReport(report);
@@ -322,36 +428,71 @@ els.validate.addEventListener("click", async () => {
 });
 
 els.format.addEventListener("click", async () => {
-  if (!els.data.value.trim()) return;
-  const { document: formatted } = await api("/api/format", {
-    document: els.data.value,
-    kind: els.kind.value,
-  });
-  els.data.value = formatted;
+  if (!getData().trim()) return;
+  try {
+    const { document: formatted } = await api("/api/format", {
+      document: getData(),
+      kind: els.kind.value,
+    });
+    setData(formatted);
+  } catch (error) {
+    log(`格式化失败：${error.message}`, "err");
+  }
+});
+
+els.schemaFormat.addEventListener("click", async () => {
+  if (!getSchema().trim()) return;
+  try {
+    const { document: formatted } = await api("/api/format", {
+      document: getSchema(),
+      kind: els.kind.value,
+    });
+    setSchema(formatted);
+  } catch (error) {
+    log(`Schema 格式化失败：${error.message}`, "err");
+  }
 });
 
 els.download.addEventListener("click", () => {
+  const view = els.dataView.value;
   const isXml = els.kind.value === "xml-schema";
-  const blob = new Blob([els.data.value], {
-    type: isXml ? "application/xml" : "application/json",
-  });
+  const types = { native: isXml ? "application/xml" : "application/json", yaml: "application/yaml", toml: "application/toml" };
+  const names = { native: isXml ? "sample.xml" : "sample.json", yaml: "sample.yaml", toml: "sample.toml" };
+  const blob = new Blob([dataEditor.getValue()], { type: types[view] });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = isXml ? "sample.xml" : "sample.json";
+  link.download = names[view];
   link.click();
   URL.revokeObjectURL(link.href);
 });
 
-els.kind.addEventListener("change", refreshRootElements);
+els.kind.addEventListener("change", () => {
+  syncEditorModes();
+  refreshRootElements();
+});
+let dataViewPrev = "native";
+els.dataView.addEventListener("change", async () => {
+  if (dataViewPrev === "native" && els.dataView.value !== "native") {
+    nativeData = dataEditor.getValue();
+  }
+  await applyDataView();
+  dataViewPrev = els.dataView.value;
+});
 els.example.addEventListener("change", () => applyExample(examples[Number(els.example.value)]));
-els.schema.addEventListener("change", refreshRootElements);
+
+let schemaRefreshTimer = null;
+schemaEditor.on("change", () => {
+  clearTimeout(schemaRefreshTimer);
+  schemaRefreshTimer = setTimeout(refreshRootElements, 700);
+});
 
 els.schemaFile.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   const text = await file.text();
-  els.schema.value = text;
   els.kind.value = text.trimStart().startsWith("<") ? "xml-schema" : "json-schema";
+  syncEditorModes();
+  setSchema(text);
   await refreshRootElements();
   log(`已载入 ${file.name}`);
 });

@@ -130,6 +130,32 @@ def test_format_json_and_xml(app_client: TestClient) -> None:
     assert "<b>1</b>" in formatted_xml
 
 
+def test_convert_json_to_yaml_and_toml(app_client: TestClient) -> None:
+    document = json.dumps({"name": "航班", "count": 2, "tags": ["a", "b"]})
+    yaml_text = app_client.post(
+        "/api/convert", json={"document": document, "target": "yaml"}
+    ).json()["document"]
+    assert "name: 航班" in yaml_text
+    assert "count: 2" in yaml_text
+
+    toml_text = app_client.post(
+        "/api/convert", json={"document": document, "target": "toml"}
+    ).json()["document"]
+    assert 'name = "航班"' in toml_text
+    assert "count = 2" in toml_text
+
+
+def test_convert_rejects_invalid_json_and_toml_arrays(app_client: TestClient) -> None:
+    assert (
+        app_client.post("/api/convert", json={"document": "{oops", "target": "yaml"}).status_code
+        == 400
+    )
+    assert (
+        app_client.post("/api/convert", json={"document": "[1, 2]", "target": "toml"}).status_code
+        == 400
+    )
+
+
 def test_generate_rejects_empty_schema(app_client: TestClient) -> None:
     response = app_client.post("/api/generate", json={"schemaText": "  ", "kind": "xml-schema"})
     assert response.status_code == 400
