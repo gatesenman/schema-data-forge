@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ontology xmlns="https://palantir.com/ontology/v1" apiName="flightOperations" namespace="aviation">
+  <metadata version="1.4.0" generatedAt="2024-05-17T09:30:00Z">
+    <owner>Airline Network Planning</owner>
+    <sourceSystem>Sabre Reservations</sourceSystem>
+    <sourceSystem>Aircraft Maintenance Log</sourceSystem>
+  </metadata>
+  <objectTypes>
+    <objectType apiName="flight" primaryKeyProperty="flightId" titleProperty="flightNumber" status="ACTIVE">
+      <displayName>Flight</displayName>
+      <pluralDisplayName>Flights</pluralDisplayName>
+      <description>A scheduled passenger flight leg.</description>
+      <datasource datasetRid="ri.foundry.main.dataset.7f3c1b90-4e2d-4a11-9d55-2b8c6f0a1d42"
+                  primaryKeyColumn="flight_id" incremental="true"/>
+      <properties>
+        <property apiName="flightId" baseType="String" required="true" searchable="true">
+          <displayName>Flight ID</displayName>
+        </property>
+        <property apiName="flightNumber" baseType="String" required="true" visibility="PROMINENT">
+          <displayName>Flight Number</displayName>
+          <constraint>
+            <pattern>[A-Z]{2}[0-9]{3,4}</pattern>
+          </constraint>
+        </property>
+        <property apiName="departureTime" baseType="Timestamp" required="true">
+          <displayName>Departure Time</displayName>
+        </property>
+        <property apiName="loadFactor" baseType="Double">
+          <displayName>Load Factor</displayName>
+          <constraint>
+            <range min="0" max="1"/>
+          </constraint>
+        </property>
+      </properties>
+    </objectType>
+    <objectType apiName="aircraft" primaryKeyProperty="tailNumber" titleProperty="tailNumber" status="ACTIVE">
+      <displayName>Aircraft</displayName>
+      <pluralDisplayName>Aircraft</pluralDisplayName>
+      <datasource datasetRid="ri.foundry.main.dataset.11aa22bb-33cc-44dd-55ee-66ff77889900"
+                  primaryKeyColumn="tail_number"/>
+      <properties>
+        <property apiName="tailNumber" baseType="String" required="true" searchable="true">
+          <displayName>Tail Number</displayName>
+        </property>
+        <property apiName="fleetType" baseType="String" required="true">
+          <displayName>Fleet Type</displayName>
+          <constraint>
+            <allowedValues>
+              <value>Airbus A320neo</value>
+              <value>Boeing 737 MAX 8</value>
+              <value>Embraer E195-E2</value>
+            </allowedValues>
+          </constraint>
+        </property>
+      </properties>
+    </objectType>
+    <objectType apiName="airport" primaryKeyProperty="iataCode" titleProperty="airportName" status="EXPERIMENTAL">
+      <displayName>Airport</displayName>
+      <pluralDisplayName>Airports</pluralDisplayName>
+      <datasource datasetRid="ri.foundry.main.dataset.99887766-5544-3322-1100-aabbccddeeff"
+                  primaryKeyColumn="iata_code"/>
+      <properties>
+        <property apiName="iataCode" baseType="String" required="true">
+          <displayName>IATA Code</displayName>
+          <constraint>
+            <pattern>[A-Z]{3}</pattern>
+          </constraint>
+        </property>
+        <property apiName="airportName" baseType="String" required="true">
+          <displayName>Airport Name</displayName>
+        </property>
+        <property apiName="location" baseType="GeoPoint">
+          <displayName>Location</displayName>
+        </property>
+      </properties>
+    </objectType>
+  </objectTypes>
+  <linkTypes>
+    <linkType apiName="operatedByAircraft" cardinality="ONE_TO_ONE" sourceObjectType="flight" targetObjectType="aircraft">
+      <displayName>Operated By</displayName>
+      <reverseDisplayName>Operates Flights</reverseDisplayName>
+    </linkType>
+    <linkType apiName="departsFromAirport" cardinality="ONE_TO_MANY" sourceObjectType="airport" targetObjectType="flight">
+      <displayName>Departing Flights</displayName>
+      <reverseDisplayName>Departure Airport</reverseDisplayName>
+    </linkType>
+  </linkTypes>
+  <actionTypes>
+    <actionType apiName="delayFlight" operation="MODIFY_OBJECT" appliesTo="flight">
+      <displayName>Delay Flight</displayName>
+      <parameters>
+        <parameter apiName="newDepartureTime" baseType="Timestamp" required="true">
+          <displayName>New Departure Time</displayName>
+        </parameter>
+        <parameter apiName="delayReason" baseType="String" required="true">
+          <displayName>Delay Reason</displayName>
+        </parameter>
+      </parameters>
+    </actionType>
+  </actionTypes>
+</ontology>

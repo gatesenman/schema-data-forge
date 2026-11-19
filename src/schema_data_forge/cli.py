@@ -22,12 +22,17 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="schema-data-forge-cli",
         description="Generate sample data for a JSON Schema or XSD and validate it.",
     )
-    source = parser.add_mutually_exclusive_group(required=True)
+    source = parser.add_mutually_exclusive_group(required=False)
     source.add_argument("--schema", type=Path, help="path to a JSON Schema or .xsd file")
     source.add_argument(
         "--example",
         choices=[example.filename for example in EXAMPLES],
         help="use a bundled example schema",
+    )
+    parser.add_argument(
+        "--pack",
+        type=Path,
+        help="write a no-LLM starter pack (schemas + validated samples) to this directory and exit",
     )
     parser.add_argument("--kind", choices=[kind.value for kind in SchemaKind])
     parser.add_argument("--root-element", default="", help="root element name for XSD schemas")
@@ -67,10 +72,28 @@ def _validate_document(args: argparse.Namespace) -> int:
     return 1
 
 
+def _write_pack(args: argparse.Namespace) -> int:
+    from .pack import write_pack
+
+    result = write_pack(args.pack)
+    for item in result.items:
+        status = "valid" if item.valid else "invalid"
+        print(f"{item.name}: {status}")
+        if not item.valid:
+            for err in item.errors:
+                print(f"  - {err}", file=sys.stderr)
+    print(f"wrote pack to {result.output_dir}", file=sys.stderr)
+    return 0 if result.ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run one generation round, or validate a document when --document is set."""
     args = _build_parser().parse_args(argv)
 
+    if args.pack is not None:
+        return _write_pack(args)
+    if args.schema is None and args.example is None:
+        _build_parser().error("one of --schema, --example, or --pack is required")
     if args.document is not None:
         return _validate_document(args)
 

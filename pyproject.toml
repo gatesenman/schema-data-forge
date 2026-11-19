@@ -1,6 +1,6 @@
 [project]
 name = "schema-data-forge"
-version = "0.1.0"
+version = "0.2.0"
 description = "Web editor that generates sample data from JSON Schema and XML Schema with an LLM, guaranteed to pass schema validation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,6 +40,7 @@ where = ["src"]
 schema_data_forge = [
     "example_schemas/*.xsd",
     "example_schemas/*.json",
+    "example_documents/*.xml",
     "web/static/*",
     "web/static/vendor/*",
 ]
