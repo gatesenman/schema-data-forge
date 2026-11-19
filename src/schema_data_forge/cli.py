@@ -14,7 +14,7 @@ from .generator import (
 )
 from .llm import DeepSeekClient, LLMError
 from .models import GenerationAttempt, SchemaKind
-from .validation import detect_schema_kind
+from .validation import detect_schema_kind, validate
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -36,16 +36,45 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float, default=0.4)
     parser.add_argument("--max-attempts", type=int, default=DEFAULT_MAX_ATTEMPTS)
     parser.add_argument("--out", type=Path, help="write the validated document to this file")
+    parser.add_argument(
+        "--document",
+        type=Path,
+        help="validate this document against the schema and exit (no LLM call)",
+    )
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Run one generation round and report the outcome on stdout/stderr."""
-    args = _build_parser().parse_args(argv)
-
+def _load_schema(args: argparse.Namespace) -> tuple[str, SchemaKind]:
     schema_path = args.schema if args.schema else example_path(args.example)
     schema_text = schema_path.read_text(encoding="utf-8")
     kind = SchemaKind(args.kind) if args.kind else detect_schema_kind(schema_text)
+    return schema_text, kind
+
+
+def _validate_document(args: argparse.Namespace) -> int:
+    """Validate ``args.document`` against the selected schema and print a report."""
+    if not args.document.exists():
+        print(f"error: document not found: {args.document}", file=sys.stderr)
+        return 2
+    schema_text, kind = _load_schema(args)
+    document = args.document.read_text(encoding="utf-8")
+    report = validate(document, schema_text, kind)
+    if report.is_valid:
+        print("valid")
+        return 0
+    print(report.as_feedback(), file=sys.stderr)
+    print("invalid", file=sys.stderr)
+    return 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run one generation round, or validate a document when --document is set."""
+    args = _build_parser().parse_args(argv)
+
+    if args.document is not None:
+        return _validate_document(args)
+
+    schema_text, kind = _load_schema(args)
 
     root_element = args.root_element
     if not root_element and args.example:
