@@ -12,3 +12,16 @@ sample.xml
 sample.json
 installer/
 MicrosoftEdgeWebView2Setup.exe
+
+# Additional hygiene
+.DS_Store
+Thumbs.db
+.env.local
+.env.*.local
+node_modules/
+target/
+logs/
+*.log
+coverage/
+!.env.example
+!.env.example.*
