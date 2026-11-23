@@ -16,13 +16,32 @@ A desktop editor that generates JSON / XML sample data from **JSON Schema** and 
 - **Headless CLI** for scripting and end-to-end checks.
 - **Installers**: PyInstaller builds for Windows (Inno Setup installer), macOS (`.dmg`) and Linux (`.deb`) through GitHub Actions.
 
+## Download
+
+Published packages are on [GitHub Releases v0.1.3](https://github.com/gatesenman/schema-data-forge/releases/tag/v0.1.3). Exact asset names currently on that tag:
+
+| File | Role |
+| --- | --- |
+| [SchemaDataForge-Setup.exe](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge-Setup.exe) | Windows Inno Setup installer |
+| [SchemaDataForge-windows.zip](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge-windows.zip) | Windows zip |
+| [SchemaDataForge.dmg](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge.dmg) / [SchemaDataForge-macos.zip](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge-macos.zip) | macOS |
+| [SchemaDataForge.deb](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge.deb) / [SchemaDataForge-linux.zip](https://github.com/gatesenman/schema-data-forge/releases/download/v0.1.3/SchemaDataForge-linux.zip) | Linux |
+
+This pass did not download those binaries to compute SHA256; verify against the release page. A cross-built installer is not the same as a smoke test on a real Windows machine.
+
 ## Screenshots
 
-Captured from `python -m schema_data_forge.web` with headless Chromium. No DeepSeek API key was available, so the screenshots show validation of the repo's test fixture `tests/data/palantir_ontology_valid.xml` (and of a copy with two errors added on purpose), not live AI generation.
+The two images below are existing files in `assets/`. They show the real web UI. The previous table listed four captures (including a validation-error view and a generate-without-key view) but those two extra files are **not** in the repository, so they are not embedded.
 
-| Main window (XSD example loaded) | Valid document |
-| --- | --- |
-| **Validation errors (path / line / message)** | **Generate without an API key** |
+The available shots were taken with `python -m schema_data_forge.web` and headless Chromium. No DeepSeek API key was present; they show a Palantir-style **example schema** from this repo (and related validation), not live AI generation and not a Windows-installer session. The API key field in the UI should stay empty or masked in any new shot.
+
+![Main window](assets/screenshot-main.png)
+
+*Main window with an example XSD loaded*
+
+![Validation](assets/screenshot-validation.png)
+
+*Validation view*
 
 ## Tech stack
 
