@@ -16,13 +16,23 @@
 - **命令行**：无界面生成，便于脚本和端到端检查。
 - **安装包**：GitHub Actions 用 PyInstaller 构建 Windows（Inno Setup 安装程序）、macOS（`.dmg`）、Linux（`.deb`）。
 
+## 下载
+
+已发布安装包见 [GitHub Releases v0.1.3](https://github.com/gatesenman/schema-data-forge/releases/tag/v0.1.3)，当前资产名为 `SchemaDataForge-Setup.exe`、`SchemaDataForge-windows.zip`、`SchemaDataForge.dmg`、`SchemaDataForge-macos.zip`、`SchemaDataForge.deb`、`SchemaDataForge-linux.zip`。本轮未下载这些二进制计算 SHA256，请以发行页为准。交叉构建不等于已在 Windows 真机安装验证。
+
 ## 截图
 
-以下截图为 `python -m schema_data_forge.web` 启动后由无头 Chromium 实拍。由于没有 DeepSeek API Key，截图展示的是对仓库测试样例 `tests/data/palantir_ontology_valid.xml`（以及故意加入两处错误的副本）的校验，而不是真实的 AI 生成结果。
+下面两张是仓库 `assets/` 中已有的真实 Web 界面。旧表格还写了「校验错误」和「未配置 API Key 时点击生成」，但这两张文件目前**不在仓库里**，因此不嵌入。
 
-| 主界面（已加载 XSD 示例） | 校验通过 |
-| --- | --- |
-| **校验错误（位置 / 行号 / 信息）** | **未配置 API Key 时点击生成** |
+现有截图由 `python -m schema_data_forge.web` 配合无头 Chromium 拍摄，当时没有 DeepSeek API Key，展示的是本仓库的示例 schema 与校验，不是直播 AI 生成，也不是 Windows 安装包装好后的画面。请勿在新截图里露出真实 API Key。
+
+![主界面](assets/screenshot-main.png)
+
+*主界面（已加载示例 XSD）*
+
+![校验](assets/screenshot-validation.png)
+
+*校验视图*
 
 ## 技术栈
 
